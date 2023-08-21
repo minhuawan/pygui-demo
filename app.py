@@ -14,6 +14,7 @@ class App():
         self.master = Tk()
         self.master.title('PY GUI DEMO')
         self.master.minsize(width=900, height=800)
+        # self.master.maxsize(width=900, height=800)
         # self.master.resizable(0, 0)
         # self.master['bg'] = '#AC99F2'
         
@@ -39,7 +40,7 @@ class App():
         s.configure('tab.TFrame', background='#7AC5CD')
         s.configure('searcher.TFrame', background='#7A00CD')
         s.configure('file_list.TFrame', background='#FFC5CD')
-        s.configure('content.TFrame', background='#7AFFCD')
+        s.configure('content.TFrame', background='#FFFFCD')
         s.configure('content.Treeview')
         
         
