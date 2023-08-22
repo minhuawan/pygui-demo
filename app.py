@@ -75,12 +75,13 @@ class App():
         self.page_selector.layout()
 
 
-    def on_page_change(self, page):
-        self.content.refresh_page(page)
+    def on_page_change(self, page, page_size):
+        self.content.refresh_page(page, page_size)
 
     def on_file_select(self, index):
         self.data.read_data_from_filename(self.data.file_names[index])
-        self.page_selector.refresh_page(0)
+        self.content.on_file_select()
+        self.page_selector.on_file_select()
 
     def on_search(self, input):
         self.file_list.on_search(input)
