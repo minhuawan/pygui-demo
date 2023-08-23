@@ -1,4 +1,5 @@
-from tkinter import CENTER, NO, YES, IntVar, ttk
+from tkinter import CENTER, NO, YES, IntVar, ttk, PhotoImage
+
 
 
 class Content():
@@ -9,7 +10,10 @@ class Content():
         self.tag_event = ('event')
 
         self.has_created = False
+        self.content_search_callback = None
     
+    def bind_content_search_callback(self, callback):
+        self.content_search_callback = callback
 
     def on_file_select(self):
         self.treeview_display_fields = self.app.data.fields
@@ -19,10 +23,20 @@ class Content():
         self.create_field_selectors()
         self.create_tree()
         self.create_scroll()
+        self.create_content_search()
         self.has_created = True
+    
+    def create_content_search(self):
+        self.content_search = ttk.Entry(self.field_select_frame)
+        self.content_search.bind('<KeyRelease>', self.on_content_search_event)
+        self.content_search_state_image_ok = PhotoImage(file='./images/status_ok.png')
+        self.content_search_state_image_error = PhotoImage(file='./images/status_error.png')
+        
+        self.content_search_state_label = ttk.Label(self.field_select_frame, image=self.content_search_state_image_ok)
+
 
     def create_field_selectors(self):
-        self.field_select_frame = ttk.Frame(self.frame)
+        self.field_select_frame = ttk.Frame(self.frame, style="searcher.TFrame")
 
         fields = self.app.data.fields
         self.field_selectors = []
@@ -66,20 +80,23 @@ class Content():
         return selected_fields
     
 
-    def refresh_page(self, page, page_size=None):
-        self.refresh_tree(page, page_size)
+    def refresh_page(self, data, page, page_size=None):
+        self.current_page = page
+        self.page_size = page_size or self.page_size
+
+        start = page * self.page_size
+        end = min(start + self.page_size, len(data))
+        self.page_values_list = data[start:end]
+
+        self.refresh_tree(self.page_values_list)
         self.layout()
 
 
-    def refresh_tree(self, page, page_size):
-        self.current_page = page
-        self.page_size = page_size or self.page_size
-        start = page * self.page_size
-        end = min(start + self.page_size, len(self.app.data.values_list))
-        page_values_list = self.app.data.values_list[start:end]
-    
+
+    def refresh_tree(self, data):
         for i in self.tree.get_children():
             self.tree.delete(i)
+
             
         fields = self.app.data.fields
         self.tree['columns'] = fields
@@ -89,7 +106,7 @@ class Content():
             self.tree.heading(f, text=f, anchor=CENTER)
         
         
-        for i, values in enumerate(page_values_list):
+        for i, values in enumerate(data):
             self.tree.insert('', 'end', values=values, iid=i, 
                              tags= self.tag_event if i % 2 == 0 else self.tag_odd)
         self.tree.update()
@@ -98,10 +115,66 @@ class Content():
 
     def refill_data_by_selected_fields(self, selected_fields):
         self.treeview_display_fields = selected_fields
-        self.refresh_page(self.current_page)
+        self.refresh_tree(self.page_values_list)
+        self.layout()
 
     def item_clicked(self):
         print('clicked')
+            
+    def content_search_command_test(self, command: str):
+        values_list = self.page_values_list
+        if len(values_list) == 0 or len(values_list[0]) == 0:
+            return False, command # ok if values_list are empty
+    
+        values = values_list[0]
+        for i in range(len(values)) :
+            command = command.replace(f"#{i}", f'values[{i}]')
+        try:
+            result = eval(command)
+            return type(result) is bool, command
+        except:
+            return False, command
+
+    def on_content_search_event(self, event):
+        def reset_all_data():
+            self.app.data.set_display_values_list(self.app.data.total_values_list)
+            self.refresh_page(self.app.data.display_values_list, 0, self.page_size)
+            self.change_content_search_status(True)
+            if self.content_search_callback:
+                self.content_search_callback()
+            return
+        
+        input = event.widget.get()
+        if input.strip() == '':
+            # when clean
+            reset_all_data()
+
+        ok, command = self.content_search_command_test(input)
+        if not ok:
+            reset_all_data()
+            self.change_content_search_status(False)
+            return
+
+        values_list = self.app.data.total_values_list
+        try:
+            data = []
+            for values in values_list:
+                if eval(command) == True:
+                    data.append(values)
+            self.app.data.display_values_list = data
+            self.refresh_page(data, 0, self.page_size)
+            if self.content_search_callback:
+                self.content_search_callback()
+            self.change_content_search_status(True)
+        except Exception as ex:
+            print(ex)
+            self.change_content_search_status(False)
+    
+    def change_content_search_status(self, status):
+        if status == True:
+            self.content_search_state_label.configure(image=self.content_search_state_image_ok)
+        else:
+            self.content_search_state_label.configure(image=self.content_search_state_image_error)
     
 
     def layout(self):
@@ -119,8 +192,14 @@ class Content():
 
         self.field_select_button_all.grid(column=0, row=0, sticky='NW', padx=5, pady=5)
         self.field_select_button_none.grid(column=1, row=0, sticky='NW', padx=5, pady=5)
+        r, c = None, None
         for i, s in enumerate(self.field_selectors):
-            s.grid(row=int(i / 5) + 1, column= i % 5, sticky='NW', padx=5)
+            r, c = int(i / 5) + 1, i % 5
+            s.grid(row=r, column=c, sticky='NW', padx=5)
+
+        self.content_search.grid(row=r+1,column=0, columnspan=9, sticky="nsew")
+        self.content_search_state_label.grid(row=r+1, column=c+1)
+        # self.field_select_frame.grid_rowconfigure(r+1, weight=1)
 
         self.tree.grid(column=0, row=1, sticky="nsew", pady=0)
         self.tree_scroll.grid(column=0, row=2, sticky='EW', padx=8, pady=20) 

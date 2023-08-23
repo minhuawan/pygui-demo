@@ -19,12 +19,20 @@ class Data():
         with open(target, newline='', encoding='utf-8') as f:
             reader = csv.DictReader(f, delimiter=',')
             self.fields = reader.fieldnames
-            self.values_list = []
+            self.total_values_list = []
+            self.display_values_list = []
             for row in reader:
-                self.values_list.append(list(row.values()))
+                self.total_values_list.append(list(row.values()))
+            
+            self.display_values_list = self.total_values_list # weak copy
         
 
-        
+    
+    def set_display_values_list(self, display_values):
+        if display_values != None:
+            self.display_values_list = display_values
+        else:
+            self.display_values_list = self.total_values_list
         
 
     def read_filenames(self):

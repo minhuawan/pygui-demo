@@ -28,7 +28,9 @@ class App():
         self.page_selector.bind_page_change(self.on_page_change)
         self.page_selector.refresh_page(0)
 
-        self.searcher.bind_search_callback(self.on_search)
+        self.searcher.bind_search_callback(self.on_file_search)
+
+        self.content.bind_content_search_callback(self.on_content_search)
 
     def create_data(self):
         self.data = Data()
@@ -76,15 +78,18 @@ class App():
 
 
     def on_page_change(self, page, page_size):
-        self.content.refresh_page(page, page_size)
+        self.content.refresh_page(self.data.display_values_list, page, page_size)
 
     def on_file_select(self, index):
         self.data.read_data_from_filename(self.data.file_names[index])
         self.content.on_file_select()
         self.page_selector.on_file_select()
 
-    def on_search(self, input):
-        self.file_list.on_search(input)
+    def on_file_search(self, input):
+        self.file_list.on_file_search(input)
+    
+    def on_content_search(self):
+        self.page_selector.on_file_select()
 
     def run(self):
         self.master.mainloop()

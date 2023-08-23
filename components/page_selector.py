@@ -17,7 +17,7 @@ class PageSelector():
         for c in self.frame.winfo_children():
             c.destroy()
 
-        values_list = self.app.data.values_list
+        values_list = self.app.data.display_values_list
         r1 = len(values_list) / self.page_size
         r2 = (int)(len(values_list) / self.page_size)
         self.total_page_count = r2 if r1 == r2 else r2 + 1

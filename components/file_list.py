@@ -38,7 +38,7 @@ class FileList():
             self.list_box.insert(i, name)
         self.list_box.update()
 
-    def on_search(self, input : str):
+    def on_file_search(self, input : str):
         input = input.strip().lower()
         if input == '':
             self.display_file_names = self.app.data.file_names
